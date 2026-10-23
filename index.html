@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SymbioMatch</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{--bg:#f6f8f5;--card:#fff;--ink:#10231a;--mut:#5b6b62;--line:#e1e8e2;--g:#14532d;--e:#10b981;--soft:#e7f6ee;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0b140f;--card:#122019;--ink:#e8f3ec;--mut:#9bb0a3;--line:#22362b;--g:#6ee7a8;--e:#10b981;--soft:#143024}}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',system-ui,sans-serif}
+h1,h2,h3,.f{font-family:'Bricolage Grotesque',system-ui,sans-serif;letter-spacing:-.02em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px}
+.btn{display:inline-flex;gap:.4rem;align-items:center;justify-content:center;padding:.6rem 1.1rem;border-radius:999px;font-weight:600;font-size:.9rem;background:var(--g);color:#fff;transition:transform .15s,opacity .15s;cursor:pointer}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]) .btn{color:#06210f}}
+.btn:hover{transform:translateY(-1px)}.btn:active{transform:scale(.97)}
+.btn.o{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.inp{width:100%;padding:.65rem .9rem;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+.inp:focus,.btn:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--e);outline-offset:2px}
+.chip{padding:.2rem .6rem;border-radius:999px;background:var(--soft);color:var(--g);font-size:.75rem;font-weight:600}
+.mut{color:var(--mut)}
+.nav a{padding:.45rem .8rem;border-radius:999px;font-size:.9rem;font-weight:500}.nav a.on{background:var(--soft);color:var(--g)}
+.flow{stroke-dasharray:6 6;animation:d 1.2s linear infinite}@keyframes d{to{stroke-dashoffset:-12}}
+.fade{animation:f .5s both}@keyframes f{from{opacity:0;transform:translateY(6px)}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.tab{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
+</style></head>
+<body class="min-h-screen pb-20 md:pb-0">
+<header class="sticky top-0 z-30 backdrop-blur" style="background:color-mix(in srgb,var(--bg) 85%,transparent);border-bottom:1px solid var(--line)">
+ <div class="max-w-6xl mx-auto px-4 h-14 flex items-center gap-3">
+  <a href="#home" class="f font-extrabold text-lg flex items-center gap-2"><span class="w-7 h-7 rounded-lg grid place-items-center text-white" style="background:var(--g)">♻</span>SymbioMatch</a>
+  <nav class="nav hidden md:flex ml-4 gap-1" id="nav"></nav>
+  <div class="ml-auto flex items-center gap-2">
+   <div class="flex p-1 rounded-full" style="background:var(--soft)" id="rolebox"></div>
+   <a id="authbtn" class="btn o text-sm" href="#login">Sign in</a><button class="btn hidden sm:inline-flex" data-a="add">+ List</button>
+  </div></div></header>
+<main id="app" class="max-w-6xl mx-auto px-4 py-6"></main>
+<nav class="tab md:hidden flex overflow-x-auto text-xs py-2" id="tab"></nav>
+<div id="toast" class="fixed left-1/2 -translate-x-1/2 bottom-24 md:bottom-8 z-50"></div>
+<div id="modal"></div>
+<script>
+const R=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const C=['Agri','Wood','Metal','Plastic','Textile','Mineral','Paper'];
+let L=[
+{id:1,n:'Sugarcane bagasse',c:'Agri',e:'🌾',src:'Sugar mill',q:1200,u:'t',p:18,s:'Deccan Sugars',loc:'Pune',moq:20,d:120,apps:['Paper pulp','Biofuel','Packaging'],sf:'Combustible when dry; keep away from ignition sources.'},
+{id:2,n:'Rice husk',c:'Agri',e:'🍚',src:'Rice mill',q:800,u:'t',p:9,s:'Kaveri Agro',loc:'Nashik',moq:10,d:210,apps:['Biofuel','Bricks','Insulation'],sf:'Dust inhalation risk; use a mask.'},
+{id:3,n:'Fly ash (Class F)',c:'Mineral',e:'🪨',src:'Thermal plant',q:5000,u:'t',p:6,s:'Raichur Power',loc:'Solapur',moq:50,d:250,apps:['Cement','Bricks','Road base'],sf:'Fine particulate; verify heavy metal content.'},
+{id:4,n:'Sawdust',c:'Wood',e:'🪵',src:'Furniture unit',q:300,u:'t',p:12,s:'Teak & Co',loc:'Kolhapur',moq:5,d:230,apps:['Particle board','Pellets','Composting'],sf:'Flammable dust; check for treatment chemicals.'},
+{id:5,n:'Steel scrap (HMS)',c:'Metal',e:'🔩',src:'Fabrication',q:90,u:'t',p:31000,s:'Metalworks Ltd',loc:'Pune',moq:2,d:30,apps:['Re-melting','Casting'],sf:'Sharp edges; gloves required.'},
+{id:6,n:'Waste HDPE flakes',c:'Plastic',e:'🧴',src:'Packaging plant',q:60,u:'t',p:42000,s:'PolyCycle',loc:'Mumbai',moq:1,d:150,apps:['Recycled pipes','Moulding'],sf:'Confirm no hazardous residues.'},
+{id:7,n:'Textile offcuts',c:'Textile',e:'🧵',src:'Garment factory',q:25,u:'t',p:8000,s:'Weave India',loc:'Surat',moq:1,d:600,apps:['Insulation','Rag paper','Stuffing'],sf:'Low risk; check dye residues.'},
+{id:8,n:'Cardboard waste',c:'Paper',e:'📦',src:'Packaging hub',q:140,u:'t',p:7000,s:'BoxLoop',loc:'Pune',moq:3,d:20,apps:['Recycled board','Pulp'],sf:'Keep dry to avoid mould.'}];
+let U=null,saved=new Set([1]),cmp=new Set(),role='buyer',sel=null,nid=9;
+let D=[{id:1,l:3,q:200,p:5.5,st:'Completed',h:[['Enquiry Received','demo seed'],['Quotation Sent','demo seed'],['Accepted','demo seed'],['In Transit','demo seed'],['Completed','demo seed']],seed:1}];
+let F={q:'',c:'All',s:'rel',loc:'All'};
+const now=()=>new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+function toast(t){const e=document.getElementById('toast');e.innerHTML=`<div class="card px-4 py-2 text-sm shadow-lg fade">${t}</div>`;setTimeout(()=>e.innerHTML='',2600)}
+const route=()=>(location.hash.slice(1)||'home');
+const links=[['home','Home','🏠'],['market','Market','🛒'],['map','Map','📍'],['deals','Deals','🤝'],['calc','Cost','🧮'],['analyze','Analyzer','🔬'],['impact','Impact','🌍'],['dash','Dashboard','📊'],['help','Help','❓']];
+function shell(){
+ const r=route();
+ authbtn.href=U?'#profile':'#login';authbtn.textContent=U?U.name:'Sign in';
+ nav.innerHTML=links.slice(1).map(([k,t])=>`<a href="#${k}" class="${r==k?'on':''}">${t}</a>`).join('');
+ tab.innerHTML=links.map(([k,t,i])=>`<a href="#${k}" class="shrink-0 flex flex-col items-center px-3 ${r==k?'f font-bold':'mut'}" style="${r==k?'color:var(--g)':''}"><span class="text-lg">${i}</span>${t}</a>`).join('');
+ rolebox.innerHTML=['buyer','seller'].map(x=>`<button data-a="role" data-v="${x}" class="px-3 py-1 rounded-full text-sm font-semibold capitalize" style="${role==x?'background:var(--g);color:var(--card)':''}">${x}</button>`).join('');
+}
+const card=l=>`<article class="card p-4 flex flex-col gap-3 hover:shadow-md transition fade">
+ <div class="flex items-start justify-between"><div class="w-12 h-12 rounded-2xl grid place-items-center text-2xl" style="background:var(--soft)">${l.e}</div>
+ <button data-a="save" data-v="${l.id}" aria-label="Save" class="text-xl">${saved.has(l.id)?'💚':'🤍'}</button></div>
+ <div><h3 class="font-bold text-lg leading-tight">${l.n}</h3><p class="text-sm mut">${l.s} · ${l.loc}</p></div>
+ <div class="flex flex-wrap gap-1"><span class="chip">${l.c}</span>${l.apps.slice(0,2).map(a=>`<span class="chip" style="background:transparent;border:1px solid var(--line);color:var(--mut)">${a}</span>`).join('')}</div>
+ <div class="flex items-end justify-between mt-auto"><div><div class="f text-xl font-bold">${R(l.p)}<span class="text-sm mut font-normal">/${l.u}</span></div><div class="text-xs mut">${l.q.toLocaleString()} ${l.u} available</div></div>
+ <div class="flex gap-2 items-center"><label class="text-xs mut flex gap-1 items-center"><input type="checkbox" data-a="cmp" data-v="${l.id}" ${cmp.has(l.id)?'checked':''}>Compare</label><button class="btn" data-a="open" data-v="${l.id}">View</button></div></div></article>`;
+const views={
+home(){return `
+<section class="grid lg:grid-cols-2 gap-8 items-center py-6 md:py-12">
+ <div><span class="chip">SDG 12 · SDG 9 · SDG 13</span>
+ <h1 class="text-4xl md:text-6xl font-extrabold mt-4 leading-[1.05]">One industry’s waste is another industry’s resource.</h1>
+ <p class="mut mt-4 max-w-md">List by-products, find reusable raw materials, compare delivered costs and close the loop, all in one place.</p>
+ <form class="flex gap-2 mt-6 max-w-md" data-a="hs"><input class="inp" id="hq" placeholder="Search bagasse, fly ash, sawdust…" aria-label="Search materials"><button class="btn">Search</button></form>
+ <div class="flex gap-3 mt-4"><a href="#market" class="btn">Find materials</a><button class="btn o" data-a="add">List your by-products</button></div></div>
+ <div class="card p-6 relative overflow-hidden"><div class="text-xs mut mb-3">Live match example · demo data</div>
+ <svg viewBox="0 0 320 230" class="w-full"><path class="flow" d="M80 60 C 160 60,160 170,240 170" fill="none" stroke="#10b981" stroke-width="3"/>
+ <g><circle cx="70" cy="60" r="34" fill="var(--soft)"/><text x="70" y="70" font-size="30" text-anchor="middle">🌾</text>
+ <circle cx="250" cy="170" r="34" fill="var(--soft)"/><text x="250" y="180" font-size="30" text-anchor="middle">📄</text></g>
+ <text x="70" y="115" text-anchor="middle" font-size="12" fill="var(--ink)">Sugar mill · Pune</text><text x="250" y="225" text-anchor="middle" font-size="12" fill="var(--ink)">Paper pulp mill</text></svg>
+ <div class="flex justify-between text-sm"><span>Bagasse ₹18/t</span><span class="chip">Match found</span></div></div></section>
+<h2 class="text-2xl font-bold mt-10 mb-4">Featured materials <span class="chip align-middle">demo listings</span></h2>
+<div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">${L.slice(0,4).map(card).join('')}</div>
+<h2 class="text-2xl font-bold mt-12 mb-4">List, match, reuse</h2>
+<div class="grid md:grid-cols-3 gap-4">${[['List','Sellers publish by-products with specs and safety notes.'],['Match','Buyers search, compare suppliers and estimate delivered cost.'],['Reuse','Enquire, quote, accept and track every exchange.']].map(([t,d],i)=>`<div class="card p-5"><div class="f text-3xl" style="color:var(--e)">${['📋','🔗','♻️'][i]}</div><h3 class="font-bold text-lg mt-2">${t}</h3><p class="mut text-sm">${d}</p></div>`).join('')}</div>
+<div class="card p-6 mt-12 grid md:grid-cols-3 gap-4 text-sm">${[['SDG 12','Responsible consumption: keep materials in use and cut waste.'],['SDG 9','Industry and innovation: smarter, cleaner industrial supply chains.'],['SDG 13','Climate action: reuse can reduce emissions when measured.']].map(([a,b])=>`<div><div class="f font-bold text-lg" style="color:var(--g)">${a}</div><p class="mut">${b}</p></div>`).join('')}</div>
+<footer class="mt-12 pt-6 text-sm mut flex flex-wrap gap-4" style="border-top:1px solid var(--line)"><span>© SymbioMatch demo</span><a href="#home">About</a><a href="#home">Contact</a><a href="#home">Help</a><a href="#home">Privacy</a><a href="#home">Terms</a></footer>`},
+market(){
+ let r=L.filter(l=>(F.c=='All'||l.c==F.c)&&(F.loc=='All'||l.loc==F.loc)&&(l.n+l.apps.join()+l.src).toLowerCase().includes(F.q.toLowerCase()));
+ if(F.s=='p')r.sort((a,b)=>a.p-b.p);if(F.s=='q')r.sort((a,b)=>b.q-a.q);
+ const locs=[...new Set(L.map(l=>l.loc))];
+ return `<h1 class="text-3xl font-bold">Material marketplace</h1>
+ <div class="grid md:grid-cols-4 gap-2 mt-4"><input class="inp md:col-span-2" id="q" value="${F.q}" placeholder="Search material or application" aria-label="Search">
+ <select class="inp" data-a="f" data-k="loc"><option>All</option>${locs.map(x=>`<option ${F.loc==x?'selected':''}>${x}</option>`).join('')}</select>
+ <select class="inp" data-a="f" data-k="s">${[['rel','Relevance'],['p','Lowest price'],['q','Largest quantity']].map(([v,t])=>`<option value="${v}" ${F.s==v?'selected':''}>${t}</option>`).join('')}</select></div>
+ <div class="flex gap-2 mt-3 overflow-x-auto pb-1">${['All',...C].map(c=>`<button data-a="cat" data-v="${c}" class="chip whitespace-nowrap" style="${F.c==c?'background:var(--g);color:var(--card)':''}">${c}</button>`).join('')}</div>
+ <div class="mut text-sm mt-3">${r.length} listings (demo data)</div>
+ <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-3">${r.map(card).join('')||`<div class="card p-8 col-span-full text-center">No matches. Clear a filter or <button class="underline" data-a="clr">reset search</button>.</div>`}</div>
+ ${cmp.size>1?`<div class="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-20"><button class="btn shadow-xl" data-a="cmpgo">Compare ${cmp.size} suppliers</button></div>`:''}`},
+detail(){const l=L.find(x=>x.id==sel);if(!l)return views.market();
+ return `<button class="mut text-sm mb-3" data-a="back">← Back to marketplace</button>
+ <div class="grid lg:grid-cols-3 gap-6"><div class="lg:col-span-2 card p-6"><div class="flex gap-4 items-center"><div class="w-16 h-16 rounded-2xl grid place-items-center text-4xl" style="background:var(--soft)">${l.e}</div><div><h1 class="text-3xl font-bold">${l.n}</h1><p class="mut">${l.s} · ${l.loc} · from ${l.src}</p></div></div>
+ <div class="grid grid-cols-3 gap-3 mt-6">${[['Price',R(l.p)+'/'+l.u],['Available',l.q+' '+l.u],['Min order',l.moq+' '+l.u]].map(([a,b])=>`<div class="rounded-xl p-3" style="background:var(--soft)"><div class="text-xs mut">${a}</div><div class="f font-bold">${b}</div></div>`).join('')}</div>
+ <h3 class="font-bold mt-6">Intended applications</h3><div class="flex flex-wrap gap-2 mt-2">${l.apps.map(a=>`<span class="chip">${a}</span>`).join('')}</div>
+ <h3 class="font-bold mt-6">Safety information</h3><p class="mut text-sm mt-1">${l.sf}</p><p class="text-xs mut mt-2">Seller-provided, unverified. Confirm with a qualified professional and request the SDS before use.</p></div>
+ <form class="card p-6 h-fit" data-a="enq"><h3 class="font-bold text-lg">Send enquiry</h3><label class="text-sm mut block mt-3">Quantity (${l.u})</label><input class="inp" type="number" name="q" min="${l.moq}" max="${l.q}" value="${l.moq}" required>
+ <button class="btn w-full mt-4">Send enquiry as buyer</button><button type="button" class="btn o w-full mt-2" data-a="calcgo" data-v="${l.id}">Estimate delivered cost</button></form></div>`},
+deals(){const mine=D;
+ return `<h1 class="text-3xl font-bold">Enquiries and transactions</h1><p class="mut text-sm">Viewing as <b>${role}</b>. Switch role at top to act as the other party. Payment and delivery are simulated.</p>
+ <div class="grid gap-4 mt-4">${mine.map(d=>{const l=L.find(x=>x.id==d.l);const act=dealAct(d);
+ return `<div class="card p-5"><div class="flex flex-wrap justify-between gap-2"><div><h3 class="font-bold text-lg">${l.e} ${l.n}</h3><p class="text-sm mut">${d.q} ${l.u} · ${l.s}${d.p?' · quoted '+R(d.p)+'/'+l.u:''}</p></div><span class="chip h-fit">${d.st}</span></div>
+ <ol class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs mut">${d.h.map(([s,t])=>`<li>✓ ${s} <span class="opacity-60">${t}</span></li>`).join('')}</ol><div class="mt-4">${act}</div></div>`}).join('')||'<div class="card p-8 text-center">No transactions yet. Open a listing and send an enquiry.</div>'}</div>`},
+calc(){const l=L.find(x=>x.id==sel)||L[0];
+ return `<h1 class="text-3xl font-bold">Cost and feasibility calculator</h1><div class="grid md:grid-cols-2 gap-6 mt-4"><div class="card p-6 grid gap-3" id="cf">
+ ${[['q','Quantity (tonnes)',100],['p','Price per tonne (₹)',l.p],['d','Distance (km)',l.d],['t','Transport ₹ per tonne-km',4],['h','Handling cost (₹)',0],['x','Processing cost (₹)',0],['a','Alternative raw material total (₹)',0]].map(([k,t,v])=>`<label class="text-sm">${t}<input class="inp mt-1" data-k="${k}" type="number" min="0" value="${v}"></label>`).join('')}</div>
+ <div class="card p-6" id="cr"></div></div>`},
+impact(){const done=D.filter(d=>d.st=='Completed');const by={};done.forEach(d=>{const l=L.find(x=>x.id==d.l);by[l.c]=(by[l.c]||0)+d.q});
+ const tot=Object.values(by).reduce((a,b)=>a+b,0),mx=Math.max(1,...Object.values(by));
+ const biz=new Set(done.map(d=>L.find(x=>x.id==d.l).s)).size+(done.length?1:0);
+ return `<h1 class="text-3xl font-bold">Sustainability impact <span class="chip align-middle">demo values</span></h1>
+ <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4">${[['Material reused',tot+' t'],['Completed exchanges',done.length],['Connected businesses',biz],['Diverted from disposal',tot+' t*']].map(([a,b])=>`<div class="card p-4"><div class="text-xs mut">${a}</div><div class="f text-3xl font-bold" style="color:var(--g)">${b}</div></div>`).join('')}</div>
+ <div class="card p-6 mt-4"><h3 class="font-bold mb-3">Reuse by category</h3>${Object.entries(by).map(([k,v])=>`<div class="flex items-center gap-3 mb-2 text-sm"><span class="w-20">${k}</span><div class="h-4 rounded-full" style="width:${v/mx*100}%;min-width:8px;background:var(--e);transition:width .6s"></div><span>${v} t</span></div>`).join('')||'<p class="mut">Complete a transaction to see impact.</p>'}</div>
+ <p class="text-xs mut mt-3">*Counted once per completed transaction, with no double-counting. Quantities come from demo transactions, not verified measurements. Emissions avoided are not shown: they need a documented method and verified inputs.</p>`},
+login(){return `<div class="max-w-md mx-auto card p-6 mt-6"><h1 class="text-2xl font-bold">Sign in or register</h1><p class="text-sm mut mt-1">Demo mode: no password or real account is stored. Connect Supabase Auth for real sign-in.</p>
+<form data-a="auth" class="grid gap-3 mt-4"><input class="inp" name="name" placeholder="Your name" required><input class="inp" name="biz" placeholder="Business name" required><input class="inp" name="ind" placeholder="Industry" required><input class="inp" name="loc" placeholder="City" required><input class="inp" name="contact" type="email" placeholder="Contact email" required><select class="inp" name="role"><option value="seller">Seller: I list by-products</option><option value="buyer">Buyer: I look for materials</option></select><button class="btn">Continue</button></form></div>`},
+dash(){const mine=L.filter(l=>l.s==U.biz),ids=mine.map(l=>l.id),md=D.filter(d=>ids.includes(d.l)),S=role=='seller',n=(a,s)=>a.filter(d=>d.st==s).length;
+ const st=S?[['Active listings',mine.length],['Available quantity',mine.reduce((a,l)=>a+l.q,0)+' t'],['New enquiries',n(md,'Enquiry Received')],['Pending quotations',n(md,'Quotation Sent')],['Completed',n(md,'Completed')]]:[['Saved materials',saved.size],['Enquiries sent',D.filter(d=>!d.seed).length],['Quotations received',n(D,'Quotation Sent')],['Active transactions',D.filter(d=>!['Completed','Rejected'].includes(d.st)).length]];
+ const rc=D.flatMap(d=>d.h.map(([s,t])=>L.find(x=>x.id==d.l).n+' · '+s+' · '+t)).slice(-5).reverse();
+ return `<h1 class="text-3xl font-bold">Hi ${U.name}</h1><p class="mut text-sm">${U.biz} · ${role} dashboard</p>
+<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">${st.map(([a,b])=>`<div class="card p-4"><div class="text-xs mut">${a}</div><div class="f text-3xl font-bold" style="color:var(--g)">${b}</div></div>`).join('')}</div>
+<div class="flex gap-2 mt-4">${S?'<button class="btn" data-a="add">Add material</button><a class="btn o" href="#market">Manage listings</a>':'<a class="btn" href="#market">Find materials</a><a class="btn o" href="#market">Compare suppliers</a>'}</div>
+<div class="card p-5 mt-4"><h3 class="font-bold">Recent activity</h3>${rc.map(x=>`<p class="text-sm mut py-1">${x}</p>`).join('')||'<p class="text-sm mut">Nothing yet.</p>'}</div>`},
+map(){const Ls=L.filter(l=>F.loc=='All'||l.loc==F.loc),g={};Ls.forEach(l=>(g[l.loc]=g[l.loc]||[]).push(l));
+ return `<h1 class="text-3xl font-bold">Supplier discovery</h1><div class="card p-4 mt-4 text-sm"><b>Demo location view.</b> No map key is configured, so supplier coordinates and exact distances are not shown. For a live map, add a Leaflet or Google Maps key and real supplier coordinates.</div>
+<select class="inp mt-4 max-w-xs" data-a="f" data-k="loc" aria-label="Location"><option>All</option>${[...new Set(L.map(l=>l.loc))].map(x=>`<option ${F.loc==x?'selected':''}>${x}</option>`).join('')}</select>
+<div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">${Object.entries(g).map(([c,a])=>`<div class="card p-4"><h3 class="font-bold">📍 ${c} <span class="chip">${a.length}</span></h3>${a.map(l=>`<button data-a="open" data-v="${l.id}" class="flex justify-between w-full py-2 text-sm text-left" style="border-top:1px solid var(--line)"><span>${l.e} ${l.n}<br><span class="mut">${l.s}</span></span><span class="text-right">${R(l.p)}/${l.u}<br><span class="mut">${l.q} ${l.u}</span></span></button>`).join('')}</div>`).join('')}</div>`},
+analyze(){return `<h1 class="text-3xl font-bold">AI Material Analyzer</h1><div class="card p-4 mt-3 text-sm">Mode: <b>rule-based extraction</b>. No AI API is connected, so nothing here is AI-generated. It shows only what appears in your text or SDS. A qualified person must verify results before any reuse or safety decision.</div>
+<form data-a="an" class="card p-5 mt-4 grid gap-3 max-w-2xl"><input class="inp" name="n" placeholder="Material name (optional)"><input class="inp" name="s" placeholder="Source industry (optional)"><textarea class="inp" name="t" rows="4" placeholder="Paste SDS text, composition, contamination or known properties"></textarea>
+<label class="text-sm">SDS PDF (max 5 MB)<input class="inp mt-1" type="file" name="f" accept="application/pdf"></label><label class="text-sm">Photo (optional, kept for your records, not analyzed)<input class="inp mt-1" type="file" name="p" accept="image/*"></label><button class="btn" id="anb">Analyze</button><p id="ans" class="text-sm mut" role="status"></p></form><div id="anr" class="max-w-2xl"></div>`},
+profile(){return `<h1 class="text-3xl font-bold">Business profile and account</h1><form data-a="prof" class="card p-5 mt-4 grid gap-3 max-w-xl">${[['name','Name'],['biz','Business name'],['ind','Industry'],['loc','City'],['contact','Contact email']].map(([k,t])=>`<label class="text-sm">${t}<input class="inp mt-1" name="${k}" value="${U[k]}" required></label>`).join('')}<label class="text-sm">About your business (optional)<textarea class="inp mt-1" name="desc" rows="3">${U.desc||''}</textarea></label><button class="btn">Save profile</button></form>
+<div class="card p-5 mt-4 max-w-xl"><h3 class="font-bold">Account settings</h3><p class="text-sm mut mt-1">Role: ${role}. Your contact email is not shown on listings. Demo data lives only in this browser tab.</p><div class="flex gap-2 mt-3"><button class="btn o" data-a="out">Sign out</button><button class="btn o" data-a="reset">Reset demo data</button></div></div>`},
+help(){return `<h1 class="text-3xl font-bold">Help and about</h1><div class="card p-5 mt-4 max-w-2xl text-sm grid gap-3"><p>SymbioMatch connects industries that generate by-products with businesses that can reuse them. It supports SDG 12 (responsible consumption), SDG 9 (industry and innovation) and SDG 13 (climate action).</p><p><b>How to try the demo:</b> sign in as a seller, list a by-product, switch to Buyer, search it, compare, estimate cost, send an enquiry, then switch roles to quote, accept, dispatch and confirm. Check the Impact page after.</p><p><b>Simulated in this demo:</b> accounts, data storage, payments, delivery, the supplier map and analysis (rule-based, no AI API). Real versions need Supabase, a map key and an AI API on a server.</p></div>`}};
+const E=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+async function runAn(fm){const f=Object.fromEntries(new FormData(fm)),b=anb,s=ans;let t=f.t||'';const file=f.f;
+ if(file&&file.size){if(file.type!='application/pdf'||file.size>5e6){s.textContent='Upload a PDF under 5 MB.';return}
+  b.disabled=true;s.textContent='Reading PDF…';
+  try{pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';const d=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;for(let i=1;i<=Math.min(d.numPages,30);i++)t+=' '+(await(await d.getPage(i)).getTextContent()).items.map(x=>x.str).join(' ')}
+  catch(e){b.disabled=false;s.textContent='Could not read this PDF (scanned or protected?). Paste the text instead.';return}}
+ if(!t.trim()&&!f.n){s.textContent='Add a PDF, some text or a material name.';return}
+ b.disabled=true;s.textContent='Analyzing…';await new Promise(r=>setTimeout(r,400));b.disabled=false;s.textContent='Done.';
+ const g=re=>{const x=t.match(re);return x?x[0].replace(/\s+/g,' ').slice(0,160):null};
+ const H=[...new Set(t.match(/\bH\d{3}[A-Za-z+]*\b/g)||[])],CAS=[...new Set(t.match(/\b\d{2,7}-\d{2}-\d\b/g)||[])];
+ const nm=f.n||g(/(product name|trade name|product identifier)\s*[:\-]?\s*[A-Za-z0-9 ,()\-]{3,60}/i),w=nm&&nm.toLowerCase();
+ const lm=w&&L.find(l=>w.includes(l.n.toLowerCase().split(' ')[0]));
+ const rows=[['Material name',nm],['Source industry',f.s||null],['Composition (CAS numbers)',CAS.join(', ')||null],['Hazard statements',H.join(', ')||null],['PPE',g(/(gloves|respirator|dust mask|goggles|safety glasses|face shield)[^.]{0,100}/i)],['Handling and storage',g(/\b(store|storage|handling)\b[^.]{0,120}/i)],['Physical/chemical properties',g(/\b(appearance|flash point|melting point|ph|density|solubility)\b[^.]{0,100}/i)]];
+ anr.innerHTML=`<div class="card p-5 mt-4 fade"><h3 class="font-bold mb-2">Structured result</h3>${rows.map(([a,v])=>`<div class="py-2 text-sm" style="border-top:1px solid var(--line)"><b>${a}</b>: ${v?E(v)+' <span class="chip">found in input</span>':'<span class="mut">Not found. Add it from the SDS or a lab report.</span>'}</div>`).join('')}
+ <h3 class="font-bold mt-4">Possible reuse applications</h3><p class="text-sm mut">${lm?'Applications on similar marketplace listings (seller-provided, not verified): '+lm.apps.join(', ')+'.':'Not enough information to suggest applications.'}</p>
+ <div class="rounded-xl p-3 mt-4 text-sm" style="background:var(--soft)"><b>Verification required.</b> This is not a safety clearance. Confirm composition, hazards and contaminants with lab testing and the original SDS, and have a qualified person approve any reuse.</div></div>`}
+function dealAct(d){
+ const s=d.st,b=(a,t,c='')=>`<button class="btn ${c}" data-a="${a}" data-v="${d.id}">${t}</button>`;
+ if(s=='Enquiry Received')return role=='seller'?`<div class="flex gap-2 items-center"><input class="inp max-w-[160px]" id="qp${d.id}" type="number" min="1" placeholder="₹ per t">${b('quote','Send quotation')}</div>`:'<span class="text-sm mut">Waiting for seller quotation.</span>';
+ if(s=='Quotation Sent')return role=='buyer'?`<div class="flex gap-2">${b('acc','Accept')}${b('rej','Reject','o')}</div>`:'<span class="text-sm mut">Waiting for buyer decision.</span>';
+ if(s=='Accepted')return role=='seller'?b('ship','Mark in transit'):'<span class="text-sm mut">Waiting for seller to dispatch.</span>';
+ if(s=='In Transit')return role=='buyer'?b('done','Confirm receipt'):'<span class="text-sm mut">Waiting for buyer confirmation.</span>';
+ return '<span class="text-sm mut">Closed.</span>'}
+function step(id,st){const d=D.find(x=>x.id==id);d.st=st;d.h.push([st,now()]);toast(st);render()}
+function calc(){const v={};document.querySelectorAll('#cf input').forEach(i=>v[i.dataset.k]=Math.max(0,+i.value||0));
+ const m=v.q*v.p,t=v.d*v.t*v.q,o=v.h+v.x,T=m+t+o,u=v.q?T/v.q:0,sv=v.a?v.a-T:null;
+ cr.innerHTML=`<h3 class="font-bold mb-3">Estimated breakdown</h3>`+[['Material',m],['Transport',t],['Handling + processing',o]].map(([a,b])=>`<div class="flex justify-between py-1.5 text-sm" style="border-bottom:1px solid var(--line)"><span>${a}</span><b>${R(b)}</b></div>`).join('')+
+ `<div class="f text-4xl font-extrabold mt-4" style="color:var(--g)">${R(T)}</div><div class="text-sm mut">Delivered ${v.q?R(u)+' per tonne':'cost needs a quantity above zero'}</div>`+
+ (sv!==null?`<div class="mt-3 chip">${sv>=0?'Estimated saving':'Estimated extra cost'}: ${R(Math.abs(sv))}</div>`:'')+
+ `<p class="text-xs mut mt-4">Formula: quantity × price + distance × rate × quantity + extras. Estimates only; savings are not guaranteed.</p>`}
+function render(){shell();let r=route(),v=r=='market'&&sel?'detail':r;if(['deals','dash','profile'].includes(r)&&!U)v='login';app.innerHTML=(views[v]||views.home)();if(r=='calc')calc();if(window._top){scrollTo(0,0);_top=0}}
+function addModal(){modal.innerHTML=`<div class="fixed inset-0 z-40 grid place-items-center p-4" style="background:#0007" data-a="x"><form class="card p-6 w-full max-w-md grid gap-3 fade" data-a="addf"><h3 class="f text-xl font-bold">List a by-product</h3>
+ <input class="inp" name="n" placeholder="Material name" required><select class="inp" name="c">${C.map(c=>`<option>${c}</option>`).join('')}</select>
+ <div class="grid grid-cols-2 gap-2"><input class="inp" name="q" type="number" min="1" placeholder="Tonnes" required><input class="inp" name="p" type="number" min="0" placeholder="₹ per tonne" required></div>
+ <input class="inp" name="loc" placeholder="City" required><div class="flex gap-2"><button class="btn flex-1">Publish listing</button><button type="button" class="btn o" data-a="x">Cancel</button></div></form></div>`}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,v=t.dataset.v;
+ if(a=='x'&&(e.target==t||t.tagName=='BUTTON')){modal.innerHTML='';return}
+ if(a=='role'){role=v;render()}
+ if(a=='add'){if(!U){toast('Sign in to list by-products');location.hash='login';return}addModal()}
+ if(a=='out'){U=null;location.hash='home';render()}
+ if(a=='reset')location.reload();
+ if(a=='save'){saved.has(+v)?saved.delete(+v):saved.add(+v);toast(saved.has(+v)?'Saved':'Removed from saved');render()}
+ if(a=='open'){_top=1;sel=+v;location.hash='market';render()}
+ if(a=='back'){_top=1;sel=null;render()}
+ if(a=='cat'){F.c=v;render()}
+ if(a=='clr'){F={q:'',c:'All',s:'rel',loc:'All'};render()}
+ if(a=='calcgo'){sel=+v;location.hash='calc'}
+ if(a=='cmpgo'){modal.innerHTML=`<div class="fixed inset-0 z-40 grid place-items-center p-4" style="background:#0007"><div class="card p-5 max-w-3xl w-full overflow-auto max-h-[85vh]"><h3 class="f text-xl font-bold mb-3">Supplier comparison</h3><div class="overflow-x-auto"><table class="w-full text-sm text-left"><tr class="mut"><th></th>${[...cmp].map(i=>`<th class="p-2">${L.find(x=>x.id==i).n}</th>`).join('')}</tr>${[['Supplier',l=>l.s],['Location',l=>l.loc],['Price',l=>R(l.p)+'/'+l.u],['Available',l=>l.q+' '+l.u],['Min order',l=>l.moq+' '+l.u],['Est. delivered/t',l=>R(l.p+l.d*4)],['Data source',l=>'Seller-provided']].map(([k,f])=>`<tr style="border-top:1px solid var(--line)"><td class="p-2 mut">${k}</td>${[...cmp].map(i=>`<td class="p-2">${f(L.find(x=>x.id==i))}</td>`).join('')}</tr>`).join('')}</table></div><p class="text-xs mut mt-3">Transport uses a demo ₹4 per tonne-km at demo distances. Technical suitability is not ranked: verify specs with each supplier.</p><button class="btn mt-3" data-a="x">Close</button></div></div>`}
+ if(a=='quote'){const p=+document.getElementById('qp'+v).value;if(!(p>0))return toast('Enter a valid price');D.find(x=>x.id==v).p=p;step(+v,'Quotation Sent')}
+ if(a=='acc')step(+v,'Accepted');if(a=='rej')step(+v,'Rejected');if(a=='ship')step(+v,'In Transit');if(a=='done')step(+v,'Completed')});
+document.addEventListener('submit',e=>{const t=e.target.closest('[data-a]');if(!t)return;e.preventDefault();const f=Object.fromEntries(new FormData(t)),a=t.dataset.a;
+ if(a=='auth'||a=='prof'){const u={};for(const k in f)u[k]=E(f[k]);if(a=='auth'){U={desc:'',...u};role=f.role}else Object.assign(U,u);toast(a=='auth'?'Signed in (demo)':'Profile saved');if(a=='auth')location.hash='dash';render();return}
+ if(a=='an'){runAn(t);return}
+ if(a=='hs'){F.q=document.getElementById('hq').value;sel=null;location.hash='market';render()}
+ if(a=='enq'){if(!U){toast('Sign in to send an enquiry');location.hash='login';return}D.unshift({id:D.length+1,l:sel,q:+f.q,p:null,st:'Enquiry Received',h:[['Enquiry Received',now()]]});toast('Enquiry sent');location.hash='deals'}
+ if(a=='addf'){L.unshift({id:nid++,n:E(f.n),c:f.c,e:'♻️',src:'Your plant',q:+f.q,u:'t',p:+f.p,s:U.biz,loc:E(f.loc),moq:1,d:50,apps:['To be specified'],sf:'Not yet provided by seller.'});modal.innerHTML='';toast('Listing published (demo)');sel=null;location.hash='market';render()}});
+document.addEventListener('input',e=>{const t=e.target;if(t.id=='q'){F.q=t.value;const p=t.selectionStart;render();const q=document.getElementById('q');q.focus();q.setSelectionRange(p,p)}if(t.closest('#cf'))calc()});
+document.addEventListener('change',e=>{const t=e.target;if(t.dataset.a=='f'){F[t.dataset.k]=t.value;render()}if(t.dataset.a=='cmp'){const i=+t.dataset.v;t.checked?cmp.add(i):cmp.delete(i);render()}});
+addEventListener('hashchange',()=>{_top=1;if(route()!='market')sel=route()=='calc'?sel:null;render()});render();
+</script></body></html>

@@ -22,6 +22,7 @@ h1,h2,h3,.f{font-family:'Bricolage Grotesque',system-ui,sans-serif;letter-spacin
 .mut{color:var(--mut)}
 .nav a{padding:.45rem .8rem;border-radius:999px;font-size:.9rem;font-weight:500}.nav a.on{background:var(--soft);color:var(--g)}
 .flow{stroke-dasharray:6 6;animation:d 1.2s linear infinite}@keyframes d{to{stroke-dashoffset:-12}}
+body[data-role=seller]{--e:#d97706;--soft:#fdf2dc}@media(prefers-color-scheme:dark){:root:not([data-theme=light]) body[data-role=seller]{--soft:#33260f}}
 .fade{animation:f .5s both}@keyframes f{from{opacity:0;transform:translateY(6px)}}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .tab{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:20}
@@ -41,7 +42,7 @@ h1,h2,h3,.f{font-family:'Bricolage Grotesque',system-ui,sans-serif;letter-spacin
 <div id="modal"></div>
 <script>
 const R=n=>'₹'+Math.round(n).toLocaleString('en-IN');
-const C=['Agri','Wood','Metal','Plastic','Textile','Mineral','Paper'];
+const C=['Agri','Wood','Metal','Plastic','Textile','Mineral','Paper','Food'];
 let L=[
 {id:1,n:'Sugarcane bagasse',c:'Agri',e:'🌾',src:'Sugar mill',q:1200,u:'t',p:18,s:'Deccan Sugars',loc:'Pune',moq:20,d:120,apps:['Paper pulp','Biofuel','Packaging'],sf:'Combustible when dry; keep away from ignition sources.'},
 {id:2,n:'Rice husk',c:'Agri',e:'🍚',src:'Rice mill',q:800,u:'t',p:9,s:'Kaveri Agro',loc:'Nashik',moq:10,d:210,apps:['Biofuel','Bricks','Insulation'],sf:'Dust inhalation risk; use a mask.'},
@@ -50,18 +51,35 @@ let L=[
 {id:5,n:'Steel scrap (HMS)',c:'Metal',e:'🔩',src:'Fabrication',q:90,u:'t',p:31000,s:'Metalworks Ltd',loc:'Pune',moq:2,d:30,apps:['Re-melting','Casting'],sf:'Sharp edges; gloves required.'},
 {id:6,n:'Waste HDPE flakes',c:'Plastic',e:'🧴',src:'Packaging plant',q:60,u:'t',p:42000,s:'PolyCycle',loc:'Mumbai',moq:1,d:150,apps:['Recycled pipes','Moulding'],sf:'Confirm no hazardous residues.'},
 {id:7,n:'Textile offcuts',c:'Textile',e:'🧵',src:'Garment factory',q:25,u:'t',p:8000,s:'Weave India',loc:'Surat',moq:1,d:600,apps:['Insulation','Rag paper','Stuffing'],sf:'Low risk; check dye residues.'},
-{id:8,n:'Cardboard waste',c:'Paper',e:'📦',src:'Packaging hub',q:140,u:'t',p:7000,s:'BoxLoop',loc:'Pune',moq:3,d:20,apps:['Recycled board','Pulp'],sf:'Keep dry to avoid mould.'}];
-let U=null,saved=new Set([1]),cmp=new Set(),role='buyer',sel=null,nid=9;
+{id:8,n:'Cardboard waste',c:'Paper',e:'📦',src:'Packaging hub',q:140,u:'t',p:7000,s:'BoxLoop',loc:'Pune',moq:3,d:20,apps:['Recycled board','Pulp'],sf:'Keep dry to avoid mould.'},
+{id:9,n:'Coconut coir pith',c:'Agri',e:'🥥',src:'Coir unit',q:400,u:'t',p:5,s:'Malabar Coir',loc:'Kochi',moq:5,d:900,apps:['Soil conditioner', 'Grow bags', 'Erosion mats'],sf:'Dry dust; check salt content before agricultural use.'},
+{id:10,n:'Groundnut shells',c:'Agri',e:'🥜',src:'Oil mill',q:350,u:'t',p:6,s:'Saurashtra Oils',loc:'Rajkot',moq:10,d:550,apps:['Biofuel', 'Particle board', 'Poultry litter'],sf:'Dry dust; check for mould.'},
+{id:11,n:'Wood chips',c:'Wood',e:'🌲',src:'Sawmill',q:500,u:'t',p:10,s:'Vidarbha Timber',loc:'Nagpur',moq:10,d:330,apps:['Pellets', 'Mulch', 'Boiler fuel'],sf:'Flammable when dry; store in open air.'},
+{id:12,n:'Plywood offcuts',c:'Wood',e:'🪚',src:'Plywood factory',q:120,u:'t',p:14,s:'Ply Perfect',loc:'Belagavi',moq:5,d:180,apps:['Pallets', 'Furniture parts', 'Briquettes'],sf:'May contain adhesive residues; check formaldehyde.'},
+{id:13,n:'Aluminium turnings',c:'Metal',e:'⚙️',src:'Machining shop',q:45,u:'t',p:140000,s:'Alu Cast',loc:'Aurangabad',moq:1,d:240,apps:['Re-melting', 'Die casting'],sf:'Oily turnings: keep dry; fines can be flammable.'},
+{id:14,n:'Copper wire offcuts',c:'Metal',e:'🔌',src:'Cable maker',q:12,u:'t',p:620000,s:'Cuprum Cables',loc:'Vadodara',moq:1,d:430,apps:['Re-melting', 'Alloy making'],sf:'Sharp ends; wear gloves.'},
+{id:15,n:'PET bottle flakes',c:'Plastic',e:'🍶',src:'Bottling plant',q:80,u:'t',p:38000,s:'ReBottle',loc:'Mumbai',moq:2,d:150,apps:['Polyester fibre', 'Strapping', 'Sheets'],sf:'Check label glue and residues.'},
+{id:16,n:'PVC trimmings',c:'Plastic',e:'🧪',src:'Pipe unit',q:40,u:'t',p:28000,s:'Pipewell Industries',loc:'Nashik',moq:2,d:210,apps:['Recycled pipes', 'Tiles'],sf:'Never burn: releases harmful fumes.'},
+{id:17,n:'Denim offcuts',c:'Textile',e:'👖',src:'Jeans maker',q:30,u:'t',p:9500,s:'Indigo Mills',loc:'Ahmedabad',moq:1,d:660,apps:['Recycled yarn', 'Insulation', 'Rag paper'],sf:'Check dye and finishing chemicals.'},
+{id:18,n:'Cotton waste (noil)',c:'Textile',e:'☁️',src:'Spinning mill',q:70,u:'t',p:16000,s:'Coimbatore Spinners',loc:'Coimbatore',moq:2,d:850,apps:['Nonwovens', 'Cotton wadding', 'Open-end yarn'],sf:'Fire risk when dusty; keep from sparks.'},
+{id:19,n:'Granulated slag',c:'Mineral',e:'🏭',src:'Steel plant',q:3000,u:'t',p:900,s:'Vizag Ispat',loc:'Visakhapatnam',moq:50,d:700,apps:['Cement blending', 'Road base'],sf:'Fine dust irritant; verify chemistry.'},
+{id:20,n:'FGD gypsum',c:'Mineral',e:'🧱',src:'Power plant',q:2000,u:'t',p:350,s:'Chandrapur Power',loc:'Chandrapur',moq:20,d:500,apps:['Plasterboard', 'Cement setting', 'Soil amendment'],sf:'Verify purity and heavy metals.'},
+{id:21,n:'Mixed waste paper',c:'Paper',e:'📰',src:'Print house',q:200,u:'t',p:9000,s:'PrintHub',loc:'Pune',moq:5,d:20,apps:['Recycled paper', 'Egg trays'],sf:'Keep dry.'},
+{id:22,n:'Paper mill sludge',c:'Paper',e:'🪣',src:'Paper mill',q:600,u:'t',p:2,s:'Sahyadri Paper',loc:'Satara',moq:20,d:120,apps:['Bricks', 'Compost blend', 'Cement'],sf:'Moist; check chemicals before use.'},
+{id:23,n:'Fruit pomace',c:'Food',e:'🍎',src:'Juice plant',q:150,u:'t',p:4,s:'FreshPress',loc:'Nashik',moq:5,d:210,apps:['Animal feed', 'Pectin extraction', 'Compost'],sf:'Perishable and ferments fast; transport quickly.'},
+{id:24,n:'Spent coffee grounds',c:'Food',e:'☕',src:'Coffee plant',q:40,u:'t',p:3,s:'Brew Bharat',loc:'Mysuru',moq:2,d:850,apps:['Biofuel pellets', 'Compost', 'Mushroom substrate'],sf:'Damp; can mould within days.'},
+{id:25,n:'Brewery spent grain',c:'Food',e:'🍺',src:'Brewery',q:220,u:'t',p:3,s:'Hopsworks Brewery',loc:'Pune',moq:5,d:15,apps:['Cattle feed', 'Biogas', 'Baking flour'],sf:'Perishable; use within 1 to 2 days.'}];
+let U=null,saved=new Set([1]),cmp=new Set(),role='buyer',sel=null,nid=40;
 let D=[{id:1,l:3,q:200,p:5.5,st:'Completed',h:[['Enquiry Received','demo seed'],['Quotation Sent','demo seed'],['Accepted','demo seed'],['In Transit','demo seed'],['Completed','demo seed']],seed:1}];
 let F={q:'',c:'All',s:'rel',loc:'All'};
 const now=()=>new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
 function toast(t){const e=document.getElementById('toast');e.innerHTML=`<div class="card px-4 py-2 text-sm shadow-lg fade">${t}</div>`;setTimeout(()=>e.innerHTML='',2600)}
 const route=()=>(location.hash.slice(1)||'home');
-const links=[['home','Home','🏠'],['market','Market','🛒'],['map','Map','📍'],['deals','Deals','🤝'],['calc','Cost','🧮'],['analyze','Analyzer','🔬'],['impact','Impact','🌍'],['dash','Dashboard','📊'],['help','Help','❓']];
+const SL=[['dash','Studio','📊'],['mine','My listings','📦'],['deals','Enquiries','📥'],['analyze','Analyzer','🔬'],['impact','Impact','🌍'],['help','Help','❓']],BL=[['home','Home','🏠'],['market','Market','🛒'],['map','Map','📍'],['deals','Deals','🤝'],['calc','Cost','🧮'],['analyze','Analyzer','🔬'],['impact','Impact','🌍'],['dash','Dashboard','📊'],['help','Help','❓']];
 function shell(){
  const r=route();
- authbtn.href=U?'#profile':'#login';authbtn.textContent=U?U.name:'Sign in';
- nav.innerHTML=links.slice(1).map(([k,t])=>`<a href="#${k}" class="${r==k?'on':''}">${t}</a>`).join('');
+ const links=role=='seller'?SL:BL;document.body.dataset.role=role;authbtn.href=U?'#profile':'#login';authbtn.textContent=U?U.name:'Sign in';
+ nav.innerHTML=links.filter(x=>x[0]!='home').map(([k,t])=>`<a href="#${k}" class="${r==k?'on':''}">${t}</a>`).join('');
  tab.innerHTML=links.map(([k,t,i])=>`<a href="#${k}" class="shrink-0 flex flex-col items-center px-3 ${r==k?'f font-bold':'mut'}" style="${r==k?'color:var(--g)':''}"><span class="text-lg">${i}</span>${t}</a>`).join('');
  rolebox.innerHTML=['buyer','seller'].map(x=>`<button data-a="role" data-v="${x}" class="px-3 py-1 rounded-full text-sm font-semibold capitalize" style="${role==x?'background:var(--g);color:var(--card)':''}">${x}</button>`).join('');
 }
@@ -93,7 +111,7 @@ home(){return `
 <div class="card p-6 mt-12 grid md:grid-cols-3 gap-4 text-sm">${[['SDG 12','Responsible consumption: keep materials in use and cut waste.'],['SDG 9','Industry and innovation: smarter, cleaner industrial supply chains.'],['SDG 13','Climate action: reuse can reduce emissions when measured.']].map(([a,b])=>`<div><div class="f font-bold text-lg" style="color:var(--g)">${a}</div><p class="mut">${b}</p></div>`).join('')}</div>
 <footer class="mt-12 pt-6 text-sm mut flex flex-wrap gap-4" style="border-top:1px solid var(--line)"><span>© SymbioMatch demo</span><a href="#home">About</a><a href="#home">Contact</a><a href="#home">Help</a><a href="#home">Privacy</a><a href="#home">Terms</a></footer>`},
 market(){
- let r=L.filter(l=>(F.c=='All'||l.c==F.c)&&(F.loc=='All'||l.loc==F.loc)&&(l.n+l.apps.join()+l.src).toLowerCase().includes(F.q.toLowerCase()));
+ let r=L.filter(l=>!l.off&&(F.c=='All'||l.c==F.c)&&(F.loc=='All'||l.loc==F.loc)&&(l.n+l.apps.join()+l.src).toLowerCase().includes(F.q.toLowerCase()));
  if(F.s=='p')r.sort((a,b)=>a.p-b.p);if(F.s=='q')r.sort((a,b)=>b.q-a.q);
  const locs=[...new Set(L.map(l=>l.loc))];
  return `<h1 class="text-3xl font-bold">Material marketplace</h1>
@@ -112,11 +130,11 @@ detail(){const l=L.find(x=>x.id==sel);if(!l)return views.market();
  <h3 class="font-bold mt-6">Safety information</h3><p class="mut text-sm mt-1">${l.sf}</p><p class="text-xs mut mt-2">Seller-provided, unverified. Confirm with a qualified professional and request the SDS before use.</p></div>
  <form class="card p-6 h-fit" data-a="enq"><h3 class="font-bold text-lg">Send enquiry</h3><label class="text-sm mut block mt-3">Quantity (${l.u})</label><input class="inp" type="number" name="q" min="${l.moq}" max="${l.q}" value="${l.moq}" required>
  <button class="btn w-full mt-4">Send enquiry as buyer</button><button type="button" class="btn o w-full mt-2" data-a="calcgo" data-v="${l.id}">Estimate delivered cost</button></form></div>`},
-deals(){const mine=D;
- return `<h1 class="text-3xl font-bold">Enquiries and transactions</h1><p class="mut text-sm">Viewing as <b>${role}</b>. Switch role at top to act as the other party. Payment and delivery are simulated.</p>
+deals(){const S=role=='seller'&&U,own=L.filter(l=>l.s==(U&&U.biz)).map(l=>l.id),mine=S?D.filter(d=>own.includes(d.l)):D;
+ return `<h1 class="text-3xl font-bold">${S?'Enquiry inbox':'Enquiries and transactions'}</h1><p class="mut text-sm">Viewing as <b>${role}</b>. Switch role at top to act as the other party. Payment and delivery are simulated.</p>
  <div class="grid gap-4 mt-4">${mine.map(d=>{const l=L.find(x=>x.id==d.l);const act=dealAct(d);
  return `<div class="card p-5"><div class="flex flex-wrap justify-between gap-2"><div><h3 class="font-bold text-lg">${l.e} ${l.n}</h3><p class="text-sm mut">${d.q} ${l.u} · ${l.s}${d.p?' · quoted '+R(d.p)+'/'+l.u:''}</p></div><span class="chip h-fit">${d.st}</span></div>
- <ol class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs mut">${d.h.map(([s,t])=>`<li>✓ ${s} <span class="opacity-60">${t}</span></li>`).join('')}</ol><div class="mt-4">${act}</div></div>`}).join('')||'<div class="card p-8 text-center">No transactions yet. Open a listing and send an enquiry.</div>'}</div>`},
+ <ol class="flex flex-wrap gap-x-4 gap-y-1 mt-3 text-xs mut">${d.h.map(([s,t])=>`<li>✓ ${s} <span class="opacity-60">${t}</span></li>`).join('')}</ol><div class="mt-4">${act}</div></div>`}).join('')||'<div class="card p-8 text-center">'+(S?'No enquiries on your listings yet. Buyers will appear here.':'No transactions yet. Open a listing and send an enquiry.')+'</div>'}</div>`},
 calc(){const l=L.find(x=>x.id==sel)||L[0];
  return `<h1 class="text-3xl font-bold">Cost and feasibility calculator</h1><div class="grid md:grid-cols-2 gap-6 mt-4"><div class="card p-6 grid gap-3" id="cf">
  ${[['q','Quantity (tonnes)',100],['p','Price per tonne (₹)',l.p],['d','Distance (km)',l.d],['t','Transport ₹ per tonne-km',4],['h','Handling cost (₹)',0],['x','Processing cost (₹)',0],['a','Alternative raw material total (₹)',0]].map(([k,t,v])=>`<label class="text-sm">${t}<input class="inp mt-1" data-k="${k}" type="number" min="0" value="${v}"></label>`).join('')}</div>
@@ -135,9 +153,10 @@ dash(){const mine=L.filter(l=>l.s==U.biz),ids=mine.map(l=>l.id),md=D.filter(d=>i
  const rc=D.flatMap(d=>d.h.map(([s,t])=>L.find(x=>x.id==d.l).n+' · '+s+' · '+t)).slice(-5).reverse();
  return `<h1 class="text-3xl font-bold">Hi ${U.name}</h1><p class="mut text-sm">${U.biz} · ${role} dashboard</p>
 <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">${st.map(([a,b])=>`<div class="card p-4"><div class="text-xs mut">${a}</div><div class="f text-3xl font-bold" style="color:var(--g)">${b}</div></div>`).join('')}</div>
-<div class="flex gap-2 mt-4">${S?'<button class="btn" data-a="add">Add material</button><a class="btn o" href="#market">Manage listings</a>':'<a class="btn" href="#market">Find materials</a><a class="btn o" href="#market">Compare suppliers</a>'}</div>
+<div class="flex gap-2 mt-4">${S?'<button class="btn" data-a="add">Add material</button><a class="btn o" href="#mine">Manage listings</a>':'<a class="btn" href="#market">Find materials</a><a class="btn o" href="#market">Compare suppliers</a>'}</div>
+${S?`<div class="card p-5 mt-4"><h3 class="font-bold">Your listings at a glance</h3>${mine.map(l=>`<p class="text-sm py-1">${l.e} ${l.n} · ${D.filter(d=>d.l==l.id).length} enquiries · ${l.off?'Paused':'Active'}</p>`).join('')||'<p class="text-sm mut">No listings yet. Add your first by-product.</p>'}</div>`:`<h3 class="font-bold mt-6 mb-3">Saved materials</h3><div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">${L.filter(l=>saved.has(l.id)).map(card).join('')||'<p class="text-sm mut">Save listings with the heart icon.</p>'}</div>`}
 <div class="card p-5 mt-4"><h3 class="font-bold">Recent activity</h3>${rc.map(x=>`<p class="text-sm mut py-1">${x}</p>`).join('')||'<p class="text-sm mut">Nothing yet.</p>'}</div>`},
-map(){const Ls=L.filter(l=>F.loc=='All'||l.loc==F.loc),g={};Ls.forEach(l=>(g[l.loc]=g[l.loc]||[]).push(l));
+map(){const Ls=L.filter(l=>!l.off&&(F.loc=='All'||l.loc==F.loc)),g={};Ls.forEach(l=>(g[l.loc]=g[l.loc]||[]).push(l));
  return `<h1 class="text-3xl font-bold">Supplier discovery</h1><div class="card p-4 mt-4 text-sm"><b>Demo location view.</b> No map key is configured, so supplier coordinates and exact distances are not shown. For a live map, add a Leaflet or Google Maps key and real supplier coordinates.</div>
 <select class="inp mt-4 max-w-xs" data-a="f" data-k="loc" aria-label="Location"><option>All</option>${[...new Set(L.map(l=>l.loc))].map(x=>`<option ${F.loc==x?'selected':''}>${x}</option>`).join('')}</select>
 <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">${Object.entries(g).map(([c,a])=>`<div class="card p-4"><h3 class="font-bold">📍 ${c} <span class="chip">${a.length}</span></h3>${a.map(l=>`<button data-a="open" data-v="${l.id}" class="flex justify-between w-full py-2 text-sm text-left" style="border-top:1px solid var(--line)"><span>${l.e} ${l.n}<br><span class="mut">${l.s}</span></span><span class="text-right">${R(l.p)}/${l.u}<br><span class="mut">${l.q} ${l.u}</span></span></button>`).join('')}</div>`).join('')}</div>`},
@@ -146,7 +165,10 @@ analyze(){return `<h1 class="text-3xl font-bold">AI Material Analyzer</h1><div c
 <label class="text-sm">SDS PDF (max 5 MB)<input class="inp mt-1" type="file" name="f" accept="application/pdf"></label><label class="text-sm">Photo (optional, kept for your records, not analyzed)<input class="inp mt-1" type="file" name="p" accept="image/*"></label><button class="btn" id="anb">Analyze</button><p id="ans" class="text-sm mut" role="status"></p></form><div id="anr" class="max-w-2xl"></div>`},
 profile(){return `<h1 class="text-3xl font-bold">Business profile and account</h1><form data-a="prof" class="card p-5 mt-4 grid gap-3 max-w-xl">${[['name','Name'],['biz','Business name'],['ind','Industry'],['loc','City'],['contact','Contact email']].map(([k,t])=>`<label class="text-sm">${t}<input class="inp mt-1" name="${k}" value="${U[k]}" required></label>`).join('')}<label class="text-sm">About your business (optional)<textarea class="inp mt-1" name="desc" rows="3">${U.desc||''}</textarea></label><button class="btn">Save profile</button></form>
 <div class="card p-5 mt-4 max-w-xl"><h3 class="font-bold">Account settings</h3><p class="text-sm mut mt-1">Role: ${role}. Your contact email is not shown on listings. Demo data lives only in this browser tab.</p><div class="flex gap-2 mt-3"><button class="btn o" data-a="out">Sign out</button><button class="btn o" data-a="reset">Reset demo data</button></div></div>`},
-help(){return `<h1 class="text-3xl font-bold">Help and about</h1><div class="card p-5 mt-4 max-w-2xl text-sm grid gap-3"><p>SymbioMatch connects industries that generate by-products with businesses that can reuse them. It supports SDG 12 (responsible consumption), SDG 9 (industry and innovation) and SDG 13 (climate action).</p><p><b>How to try the demo:</b> sign in as a seller, list a by-product, switch to Buyer, search it, compare, estimate cost, send an enquiry, then switch roles to quote, accept, dispatch and confirm. Check the Impact page after.</p><p><b>Simulated in this demo:</b> accounts, data storage, payments, delivery, the supplier map and analysis (rule-based, no AI API). Real versions need Supabase, a map key and an AI API on a server.</p></div>`}};
+help(){return `<h1 class="text-3xl font-bold">Help and about</h1><div class="card p-5 mt-4 max-w-2xl text-sm grid gap-3"><p>SymbioMatch connects industries that generate by-products with businesses that can reuse them. It supports SDG 12 (responsible consumption), SDG 9 (industry and innovation) and SDG 13 (climate action).</p><p><b>How to try the demo:</b> sign in as a seller, list a by-product, switch to Buyer, search it, compare, estimate cost, send an enquiry, then switch roles to quote, accept, dispatch and confirm. Check the Impact page after.</p><p><b>Simulated in this demo:</b> accounts, data storage, payments, delivery, the supplier map and analysis (rule-based, no AI API). Real versions need Supabase, a map key and an AI API on a server.</p></div>`},
+mine(){const m=L.filter(l=>l.s==U.biz);
+ return `<div class="flex justify-between items-center"><h1 class="text-3xl font-bold">My listings</h1><button class="btn" data-a="add">+ Add material</button></div>
+<div class="grid gap-3 mt-4">${m.map(l=>`<div class="card p-4 flex flex-wrap items-center gap-3 justify-between"><div><h3 class="font-bold">${l.e} ${l.n}</h3><p class="text-sm mut">${l.q} ${l.u} · ${R(l.p)}/${l.u} · <span class="chip">${l.off?'Paused':'Active'}</span></p></div><div class="flex gap-2"><button class="btn o" data-a="tog" data-v="${l.id}">${l.off?'Resume':'Pause'}</button><button class="btn o" data-a="edit" data-v="${l.id}">Edit</button><button class="btn o" data-a="del" data-v="${l.id}">${l.cf?'Confirm delete':'Delete'}</button></div></div>`).join('')||'<div class="card p-8 text-center">No listings yet. Add your first by-product.</div>'}</div>`}};
 const E=s=>String(s).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
 async function runAn(fm){const f=Object.fromEntries(new FormData(fm)),b=anb,s=ans;let t=f.t||'';const file=f.f;
  if(file&&file.size){if(file.type!='application/pdf'||file.size>5e6){s.textContent='Upload a PDF under 5 MB.';return}
@@ -177,17 +199,20 @@ function calc(){const v={};document.querySelectorAll('#cf input').forEach(i=>v[i
  `<div class="f text-4xl font-extrabold mt-4" style="color:var(--g)">${R(T)}</div><div class="text-sm mut">Delivered ${v.q?R(u)+' per tonne':'cost needs a quantity above zero'}</div>`+
  (sv!==null?`<div class="mt-3 chip">${sv>=0?'Estimated saving':'Estimated extra cost'}: ${R(Math.abs(sv))}</div>`:'')+
  `<p class="text-xs mut mt-4">Formula: quantity × price + distance × rate × quantity + extras. Estimates only; savings are not guaranteed.</p>`}
-function render(){shell();let r=route(),v=r=='market'&&sel?'detail':r;if(['deals','dash','profile'].includes(r)&&!U)v='login';app.innerHTML=(views[v]||views.home)();if(r=='calc')calc();if(window._top){scrollTo(0,0);_top=0}}
+function render(){shell();let r=route(),v=r=='market'&&sel?'detail':r;if(['deals','dash','profile','mine'].includes(r)&&!U)v='login';app.innerHTML=(views[v]||views.home)();if(r=='calc')calc();if(window._top){scrollTo(0,0);_top=0}}
 function addModal(){modal.innerHTML=`<div class="fixed inset-0 z-40 grid place-items-center p-4" style="background:#0007" data-a="x"><form class="card p-6 w-full max-w-md grid gap-3 fade" data-a="addf"><h3 class="f text-xl font-bold">List a by-product</h3>
  <input class="inp" name="n" placeholder="Material name" required><select class="inp" name="c">${C.map(c=>`<option>${c}</option>`).join('')}</select>
  <div class="grid grid-cols-2 gap-2"><input class="inp" name="q" type="number" min="1" placeholder="Tonnes" required><input class="inp" name="p" type="number" min="0" placeholder="₹ per tonne" required></div>
  <input class="inp" name="loc" placeholder="City" required><div class="flex gap-2"><button class="btn flex-1">Publish listing</button><button type="button" class="btn o" data-a="x">Cancel</button></div></form></div>`}
 document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t)return;const a=t.dataset.a,v=t.dataset.v;
  if(a=='x'&&(e.target==t||t.tagName=='BUTTON')){modal.innerHTML='';return}
- if(a=='role'){role=v;render()}
+ if(a=='role'){role=v;const h=v=='seller'?(U?'dash':'home'):'market';if(location.hash=='#'+h)render();else location.hash=h}
  if(a=='add'){if(!U){toast('Sign in to list by-products');location.hash='login';return}addModal()}
  if(a=='out'){U=null;location.hash='home';render()}
  if(a=='reset')location.reload();
+ if(a=='tog'){const l=L.find(x=>x.id==v);l.off=!l.off;toast(l.off?'Listing paused':'Listing active');render()}
+ if(a=='del'){const l=L.find(x=>x.id==v);if(l.cf){L=L.filter(x=>x.id!=v);toast('Listing deleted')}else{l.cf=1;setTimeout(()=>{l.cf=0;if(route()=='mine')render()},3000)}render()}
+ if(a=='edit'){const l=L.find(x=>x.id==v);modal.innerHTML=`<div class="fixed inset-0 z-40 grid place-items-center p-4" style="background:#0007" data-a="x"><form class="card p-6 w-full max-w-sm grid gap-3 fade" data-a="edf"><h3 class="f text-xl font-bold">Edit ${l.n}</h3><input type="hidden" name="id" value="${l.id}"><label class="text-sm">Quantity (t)<input class="inp mt-1" name="q" type="number" min="1" value="${l.q}" required></label><label class="text-sm">Price (₹ per t)<input class="inp mt-1" name="p" type="number" min="0" value="${l.p}" required></label><div class="flex gap-2"><button class="btn flex-1">Save</button><button type="button" class="btn o" data-a="x">Cancel</button></div></form></div>`}
  if(a=='save'){saved.has(+v)?saved.delete(+v):saved.add(+v);toast(saved.has(+v)?'Saved':'Removed from saved');render()}
  if(a=='open'){_top=1;sel=+v;location.hash='market';render()}
  if(a=='back'){_top=1;sel=null;render()}
@@ -200,9 +225,10 @@ document.addEventListener('click',e=>{const t=e.target.closest('[data-a]');if(!t
 document.addEventListener('submit',e=>{const t=e.target.closest('[data-a]');if(!t)return;e.preventDefault();const f=Object.fromEntries(new FormData(t)),a=t.dataset.a;
  if(a=='auth'||a=='prof'){const u={};for(const k in f)u[k]=E(f[k]);if(a=='auth'){U={desc:'',...u};role=f.role}else Object.assign(U,u);toast(a=='auth'?'Signed in (demo)':'Profile saved');if(a=='auth')location.hash='dash';render();return}
  if(a=='an'){runAn(t);return}
+ if(a=='edf'){const l=L.find(x=>x.id==f.id);l.q=+f.q;l.p=+f.p;modal.innerHTML='';toast('Listing updated');render();return}
  if(a=='hs'){F.q=document.getElementById('hq').value;sel=null;location.hash='market';render()}
  if(a=='enq'){if(!U){toast('Sign in to send an enquiry');location.hash='login';return}D.unshift({id:D.length+1,l:sel,q:+f.q,p:null,st:'Enquiry Received',h:[['Enquiry Received',now()]]});toast('Enquiry sent');location.hash='deals'}
- if(a=='addf'){L.unshift({id:nid++,n:E(f.n),c:f.c,e:'♻️',src:'Your plant',q:+f.q,u:'t',p:+f.p,s:U.biz,loc:E(f.loc),moq:1,d:50,apps:['To be specified'],sf:'Not yet provided by seller.'});modal.innerHTML='';toast('Listing published (demo)');sel=null;location.hash='market';render()}});
+ if(a=='addf'){L.unshift({id:nid++,n:E(f.n),c:f.c,e:'♻️',src:'Your plant',q:+f.q,u:'t',p:+f.p,s:U.biz,loc:E(f.loc),moq:1,d:50,apps:['To be specified'],sf:'Not yet provided by seller.'});modal.innerHTML='';role='seller';toast('Listing published (demo)');sel=null;location.hash='mine';render()}});
 document.addEventListener('input',e=>{const t=e.target;if(t.id=='q'){F.q=t.value;const p=t.selectionStart;render();const q=document.getElementById('q');q.focus();q.setSelectionRange(p,p)}if(t.closest('#cf'))calc()});
 document.addEventListener('change',e=>{const t=e.target;if(t.dataset.a=='f'){F[t.dataset.k]=t.value;render()}if(t.dataset.a=='cmp'){const i=+t.dataset.v;t.checked?cmp.add(i):cmp.delete(i);render()}});
 addEventListener('hashchange',()=>{_top=1;if(route()!='market')sel=route()=='calc'?sel:null;render()});render();
